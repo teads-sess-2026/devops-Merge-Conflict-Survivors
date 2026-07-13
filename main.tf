@@ -1,17 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = "eu-west-1"
-  profile = "summer-school"
-}
-
 data "aws_ami" "amazon_linux" {
   most_recent = true
   owners      = ["amazon"]
@@ -22,15 +8,22 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
-resource "aws_instance" "vps" {
+resource "aws_instance" "vps_a_merge_conflict_survivors" {
   ami           = data.aws_ami.amazon_linux.id
   instance_type = "t3.micro"
+  subnet_id     = aws_subnet.private_a.id
 
-  tags = {
-    Name = "vps"
-  }
+  vpc_security_group_ids = [aws_security_group.vps_merge_conflict_survivors.id]
+
+  tags = { Name = "vps-a-merge-conflict-survivors" }
 }
 
-output "public_ip" {
-  value = aws_instance.vps.public_ip
+resource "aws_instance" "vps_b_merge_conflict_survivors" {
+  ami           = data.aws_ami.amazon_linux.id
+  instance_type = "t3.micro"
+  subnet_id     = aws_subnet.private_b.id
+
+  vpc_security_group_ids = [aws_security_group.vps_merge_conflict_survivors.id]
+
+  tags = { Name = "vps-b-merge-conflict-survivors" }
 }
