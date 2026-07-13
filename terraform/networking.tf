@@ -1,12 +1,12 @@
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
 
-  tags = { Name = "main-merge-confilt-survivors" }
+  tags = { Name = "main-merge-conflict-survivors" }
 }
 
 resource "aws_subnet" "private_a" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.1.0/24"
+  cidr_block        = "10.0.10.0/24"
   availability_zone = "eu-west-1a"
 
   tags = { Name = "private-a" }
@@ -14,7 +14,7 @@ resource "aws_subnet" "private_a" {
 
 resource "aws_subnet" "private_b" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.3.0/24"
+  cidr_block        = "10.0.11.0/24"
   availability_zone = "eu-west-1b"
 
   tags = { Name = "private-b" }
@@ -30,7 +30,7 @@ resource "aws_subnet" "public_a" {
 
 resource "aws_subnet" "public_b" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.2.0/24"
+  cidr_block        = "10.0.1.0/24"
   availability_zone = "eu-west-1b"
 
   tags = { Name = "public-b" }
