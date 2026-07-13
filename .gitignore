@@ -1,2 +1,5 @@
 *.terraform.*
 *.terraform.
+terraform.*
+tfplan
+.DS_Store
