@@ -160,12 +160,69 @@ app.get('/metrics', async (req, res) => {
 });
 
 app.get('/scaling', (req, res) => {
-  res.status(200).json({
-    message: 'HPA Scaling Information',
-    info: 'View HPA status with: kubectl get hpa test-workload-hpa',
-    pod_name: process.env.HOSTNAME,
-    note: 'This pod is part of an auto-scaling deployment (2-10 replicas based on CPU/memory usage)'
-  });
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HPA Scaling Information</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    h1 { color: #333; margin-top: 0; }
+    .info-box { background: #e3f2fd; border-left: 4px solid #2196F3; padding: 15px; margin: 15px 0; border-radius: 4px; }
+    .label { font-weight: 600; color: #555; }
+    .value { color: #333; margin: 5px 0 15px 0; }
+    .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+    .metric-card { background: #f9f9f9; padding: 15px; border-radius: 4px; border: 1px solid #ddd; }
+    .metric-card .label { font-size: 12px; text-transform: uppercase; color: #999; }
+    .metric-card .value { font-size: 24px; font-weight: bold; color: #2196F3; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>⚙️ HPA Scaling Information</h1>
+
+    <div class="info-box">
+      <div class="label">Pod Name (Hostname)</div>
+      <div class="value">${process.env.HOSTNAME || 'unknown'}</div>
+    </div>
+
+    <div class="metrics">
+      <div class="metric-card">
+        <div class="label">Min Replicas</div>
+        <div class="value">2</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">Max Replicas</div>
+        <div class="value">10</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">Target CPU</div>
+        <div class="value">80%</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">Target Memory</div>
+        <div class="value">80%</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <div class="label">Current Status</div>
+      <div class="value">✅ This pod is part of an auto-scaling deployment. The Horizontal Pod Autoscaler (HPA) monitors CPU and memory usage and automatically scales the number of replicas between 2-10.</div>
+    </div>
+
+    <div class="info-box">
+      <div class="label">How to view HPA status</div>
+      <div class="value"><code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">kubectl get hpa test-workload-hpa</code></div>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+  res.set('Content-Type', 'text/html');
+  res.status(200).send(html);
 });
 
 // --- Start ---
