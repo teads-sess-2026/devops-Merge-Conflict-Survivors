@@ -213,7 +213,18 @@
 </div>
 
 <script>
-  document.getElementById('hostname').textContent = '{{ hostname }}' || 'test-workload';
+  async function fetchHostname() {
+    try {
+      const res = await fetch('/api/scaling');
+      if (!res.ok) throw new Error('failed to fetch');
+      const data = await res.json();
+      document.getElementById('hostname').textContent = data.hostname;
+    } catch (e) {
+      console.error('hostname fetch failed', e);
+    }
+  }
+
+  fetchHostname();
 </script>
 
 </body>
