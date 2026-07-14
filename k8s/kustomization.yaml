@@ -7,3 +7,4 @@ resources:
   - hpa.yaml
   - monitoring/
   - image-automation.yaml
+  - website/
