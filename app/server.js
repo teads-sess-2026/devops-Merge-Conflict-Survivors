@@ -182,7 +182,7 @@ app.get('/health', (req, res) => {
 
 app.get('/', (req, res) => {
   res.status(200).json({
-    message: 'Hello from Kubernetes!',
+    message: 'Hello from Kubernetess!',
     hostname: process.env.HOSTNAME,
     timestamp: new Date().toISOString(),
   });
