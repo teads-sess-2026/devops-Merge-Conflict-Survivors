@@ -1,5 +1,6 @@
 resource "aws_iam_role" "eks_cluster" {
   name = "eks-cluster-role-merge-conflict-survivors"
+  permissions_boundary = "arn:aws:iam::937697200280:policy/summer-school-ljubljana-boundary"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -18,6 +19,7 @@ resource "aws_iam_role_policy_attachment" "eks_cluster" {
 
 resource "aws_iam_role" "eks_node" {
   name = "eks-node-role-merge-conflict-survivors"
+  permissions_boundary = "arn:aws:iam::937697200280:policy/summer-school-ljubljana-boundary"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

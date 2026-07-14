@@ -9,7 +9,7 @@ resource "aws_subnet" "private_a" {
   cidr_block        = "10.0.10.0/24"
   availability_zone = "eu-west-1a"
 
-  tags = { Name = "private-a" }
+  tags = { Name = "private-a-Merge" }
 }
 
 resource "aws_subnet" "private_b" {
@@ -17,7 +17,7 @@ resource "aws_subnet" "private_b" {
   cidr_block        = "10.0.11.0/24"
   availability_zone = "eu-west-1b"
 
-  tags = { Name = "private-b" }
+  tags = { Name = "private-b-Merge" }
 }
 
 resource "aws_subnet" "public_a" {
@@ -25,7 +25,7 @@ resource "aws_subnet" "public_a" {
   cidr_block        = "10.0.0.0/24"
   availability_zone = "eu-west-1a"
 
-  tags = { Name = "public-a" }
+  tags = { Name = "public-a-Merge" }
 }
 
 resource "aws_subnet" "public_b" {
@@ -33,7 +33,7 @@ resource "aws_subnet" "public_b" {
   cidr_block        = "10.0.1.0/24"
   availability_zone = "eu-west-1b"
 
-  tags = { Name = "public-b" }
+  tags = { Name = "public-b-Merge" }
 }
 
 resource "aws_internet_gateway" "igw" {
@@ -50,7 +50,7 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.igw.id
   }
 
-  tags = { Name = "public" }
+  tags = { Name = "public-Merge" }
 }
 
 resource "aws_route_table_association" "public_a" {
@@ -65,13 +65,14 @@ resource "aws_route_table_association" "public_b" {
 
 resource "aws_eip" "nat" {
   domain = "vpc"
+  tags = { Name = "Merge-Confilct" }
 }
 
 resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public_a.id
 
-  tags = { Name = "nat" }
+  tags = { Name = "nat-Merge-Conflict" }
 }
 
 resource "aws_route_table" "private" {
@@ -82,7 +83,7 @@ resource "aws_route_table" "private" {
     nat_gateway_id = aws_nat_gateway.nat.id
   }
 
-  tags = { Name = "private" }
+  tags = { Name = "private-Merge" }
 }
 
 resource "aws_route_table_association" "private_a" {
