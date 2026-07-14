@@ -201,28 +201,36 @@ async function getPodMetrics() {
       return { cpu: 'N/A', memory: 'N/A' };
     }
 
-    let totalCpu = 0, totalMemory = 0;
+    let totalCpuNano = 0, totalMemoryKi = 0;
     result.items.forEach(pod => {
       const container = pod.containers[0];
       if (container) {
-        const cpu = parseInt(container.usage.cpu) || 0;
-        const mem = parseInt(container.usage.memory) || 0;
-        totalCpu += cpu;
-        totalMemory += mem;
+        // cpu usage is a string like "8254438n" (nanocores) or occasionally "23m" (millicores)
+        const cpuStr = container.usage.cpu;
+        const cpuNano = cpuStr.endsWith('n')
+          ? parseInt(cpuStr)
+          : cpuStr.endsWith('m')
+            ? parseInt(cpuStr) * 1e6
+            : parseInt(cpuStr) * 1e9; // bare cores, rare
+        // memory usage is a string like "41008Ki"
+        const memStr = container.usage.memory;
+        const memKi = memStr.endsWith('Ki') ? parseInt(memStr) : parseInt(memStr) / 1024;
+
+        totalCpuNano += cpuNano || 0;
+        totalMemoryKi += memKi || 0;
       }
     });
 
-    const avgCpu = Math.round(totalCpu / result.items.length);
-    const avgMemory = Math.round(totalMemory / result.items.length / 1024 / 1024);
+    const avgCpuMillicores = Math.round(totalCpuNano / result.items.length / 1e6);
+    const avgMemoryMi = Math.round(totalMemoryKi / result.items.length / 1024);
 
-    console.log('Metrics:', avgCpu, avgMemory);
-    return { cpu: avgCpu + 'm', memory: avgMemory + 'Mi' };
+    console.log('Metrics:', avgCpuMillicores, avgMemoryMi);
+    return { cpu: avgCpuMillicores + 'm', memory: avgMemoryMi + 'Mi' };
   } catch (e) {
     console.error('Error fetching metrics:', e.message);
     return { cpu: 'N/A', memory: 'N/A' };
   }
 }
-
 // --- Routes ---
 
 app.get('/health', (req, res) => {
