@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-workload
+  namespace: default
+  labels:
+    app: test-workload
+spec:
+  type: LoadBalancer
+  selector:
+    app: test-workload
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 3000
+    name: http
