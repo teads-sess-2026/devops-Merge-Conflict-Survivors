@@ -1,0 +1,12 @@
+{
+  "name": "k8s-test-workload",
+  "version": "1.0.0",
+  "description": "Simple test workload for Kubernetes deployment",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
