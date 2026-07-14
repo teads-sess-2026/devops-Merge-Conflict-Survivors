@@ -393,25 +393,23 @@
     }
   }
 
-  let lastStatusUpdate = 0;
-  const STATUS_DEBOUNCE_MS = 500;
+  let testRunning = false;
 
   async function pollLoadTestStatus() {
     try {
       const res = await fetch('/api/load-test/status');
       const data = await res.json();
-      const now = Date.now();
-
-      if (now - lastStatusUpdate < STATUS_DEBOUNCE_MS) {
-        return;
-      }
-      lastStatusUpdate = now;
 
       const runBtn = document.getElementById('load-test-btn');
       const stopBtn = document.getElementById('stop-test-btn');
-      runBtn.disabled = data.active;
-      runBtn.textContent = data.active ? 'Running...' : 'Run load test';
-      stopBtn.disabled = !data.active;
+
+      // Only update if state actually changed
+      if (testRunning !== data.active) {
+        testRunning = data.active;
+        runBtn.disabled = data.active;
+        runBtn.textContent = data.active ? 'Running...' : 'Run load test';
+        stopBtn.disabled = !data.active;
+      }
     } catch (e) {
       console.error('load-test status poll failed', e);
     }
