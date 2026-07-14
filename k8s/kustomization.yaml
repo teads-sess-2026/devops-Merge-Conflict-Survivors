@@ -9,4 +9,4 @@ resources:
 images:
 - name: app-image
   newName: 937697200280.dkr.ecr.eu-west-1.amazonaws.com/merge-conflict-survivors
-  newTag: 457e2fc5b3250dc216387d34c376a777669875cd
+  newTag: d5d09c9f31c7f9ad7675a10b424ce450fec49953
