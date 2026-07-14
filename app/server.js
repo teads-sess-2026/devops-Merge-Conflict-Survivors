@@ -193,8 +193,11 @@ async function getPodCount() {
 
 async function getPodMetrics() {
   try {
+    console.log('Querying metrics API...');
     const result = await queryK8sAPI('/apis/metrics.k8s.io/v1beta1/namespaces/default/pods?labelSelector=app=test-workload');
+    console.log('Metrics result:', JSON.stringify(result).substring(0, 300));
     if (!result || !result.items || result.items.length === 0) {
+      console.log('No metrics items found');
       return { cpu: 'N/A', memory: 'N/A' };
     }
 
@@ -212,6 +215,7 @@ async function getPodMetrics() {
     const avgCpu = Math.round(totalCpu / result.items.length);
     const avgMemory = Math.round(totalMemory / result.items.length / 1024 / 1024);
 
+    console.log('Metrics:', avgCpu, avgMemory);
     return { cpu: avgCpu + 'm', memory: avgMemory + 'Mi' };
   } catch (e) {
     console.error('Error fetching metrics:', e.message);
