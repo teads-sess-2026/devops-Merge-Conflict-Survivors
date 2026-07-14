@@ -4,6 +4,8 @@ const express = require('express');
 const client = require('prom-client');
 const { trace, context } = require('@opentelemetry/api');
 const swaggerUi = require('swagger-ui-express');
+const https = require('https');
+const fs = require('fs');
 
 const app = express();
 const port = 3000;
@@ -140,6 +142,47 @@ const openApiSpec = {
 
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
+// --- Kubernetes API ---
+
+function queryK8sAPI(path) {
+  return new Promise((resolve, reject) => {
+    const token = fs.readFileSync('/var/run/secrets/kubernetes.io/serviceaccount/token', 'utf8');
+    const ca = fs.readFileSync('/var/run/secrets/kubernetes.io/serviceaccount/ca.crt', 'utf8');
+
+    const options = {
+      hostname: 'kubernetes.default.svc.cluster.local',
+      path,
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      ca,
+    };
+
+    https.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(data));
+        } catch (e) {
+          reject(e);
+        }
+      });
+    }).on('error', reject).end();
+  });
+}
+
+async function getPodCount() {
+  try {
+    const result = await queryK8sAPI('/api/v1/namespaces/default/pods?labelSelector=app=test-workload');
+    return result.items ? result.items.length : 0;
+  } catch (e) {
+    console.error('Error fetching pod count:', e.message);
+    return null;
+  }
+}
+
 // --- Routes ---
 
 app.get('/health', (req, res) => {
@@ -159,7 +202,10 @@ app.get('/metrics', async (req, res) => {
   res.end(await register.metrics());
 });
 
-app.get('/scaling', (req, res) => {
+app.get('/scaling', async (req, res) => {
+  const podCount = await getPodCount();
+  const podCountDisplay = podCount !== null ? podCount : 'Unable to fetch';
+
   const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -178,6 +224,9 @@ app.get('/scaling', (req, res) => {
     .metric-card { background: #f9f9f9; padding: 15px; border-radius: 4px; border: 1px solid #ddd; }
     .metric-card .label { font-size: 12px; text-transform: uppercase; color: #999; }
     .metric-card .value { font-size: 24px; font-weight: bold; color: #2196F3; }
+    .current-pods { background: #c8e6c9; border-left: 4px solid #4caf50; }
+    .current-pods .value { color: #2e7d32; }
+    .refresh-hint { font-size: 12px; color: #999; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -190,20 +239,21 @@ app.get('/scaling', (req, res) => {
     </div>
 
     <div class="metrics">
-      <div class="metric-card">
-        <div class="label">Min Replicas</div>
-        <div class="value">2</div>
+      <div class="metric-card current-pods">
+        <div class="label">Current Running Pods</div>
+        <div class="value">${podCountDisplay}</div>
+        <div class="refresh-hint">Refresh to see updates</div>
       </div>
       <div class="metric-card">
         <div class="label">Max Replicas</div>
         <div class="value">10</div>
       </div>
       <div class="metric-card">
-        <div class="label">Target CPU</div>
-        <div class="value">80%</div>
+        <div class="label">Min Replicas</div>
+        <div class="value">2</div>
       </div>
       <div class="metric-card">
-        <div class="label">Target Memory</div>
+        <div class="label">Target CPU</div>
         <div class="value">80%</div>
       </div>
     </div>
@@ -217,6 +267,10 @@ app.get('/scaling', (req, res) => {
       <div class="label">How to view HPA status</div>
       <div class="value"><code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">kubectl get hpa test-workload-hpa</code></div>
     </div>
+
+    <script>
+      setInterval(() => location.reload(), 3000);
+    </script>
   </div>
 </body>
 </html>
