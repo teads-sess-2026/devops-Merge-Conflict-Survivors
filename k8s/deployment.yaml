@@ -14,6 +14,10 @@ spec:
     metadata:
       labels:
         app: test-workload
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: app
@@ -22,6 +26,11 @@ spec:
         ports:
         - containerPort: 3000
           name: http
+        env:
+        - name: OTEL_SERVICE_NAME
+          value: k8s-test-workload
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://tempo.monitoring.svc.cluster.local:4318
         livenessProbe:
           httpGet:
             path: /health
