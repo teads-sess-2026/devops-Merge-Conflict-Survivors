@@ -258,18 +258,26 @@ app.get('/scaling', (req, res) => {
 
 app.get('/api/scaling', async (req, res) => {
   const podCount = await getPodCount();
-  const metrics = await getPodMetrics(); // { cpu: '34m', memory: '58Mi' }
+  const metrics = await getPodMetrics(); // { cpu: '7m', memory: '54Mi' }
 
   const cpuMillicores = parseInt(metrics.cpu) || 0;
   const memMi = parseInt(metrics.memory) || 0;
+
+  const CPU_LIMIT_M = 200;      // from your Deployment's resources.limits.cpu
+  const MEM_LIMIT_MI = 128;     // from your Deployment's resources.limits.memory
+  const HPA_TARGET_PCT = 0.80;  // your HPA's target CPU utilization
+
+  // Progress toward the HPA's scale-up trigger, not just raw usage vs limit
+  const cpuUtilPct = cpuMillicores / CPU_LIMIT_M;           // e.g. 7/200 = 0.035
+  const cpuProgressPct = Math.min(100, Math.round((cpuUtilPct / HPA_TARGET_PCT) * 100));
 
   res.json({
     hostname: process.env.HOSTNAME,
     current: podCount,
     min: 2,
     max: 10,
-    cpu: { value: metrics.cpu, pct: Math.min(100, Math.round((cpuMillicores / 200) * 100)) }, // 200m = your CPU limit
-    memory: { value: metrics.memory, pct: Math.min(100, Math.round((memMi / 128) * 100)) },   // 128Mi = your memory limit
+    cpu: { value: metrics.cpu, pct: cpuProgressPct },
+    memory: { value: metrics.memory, pct: Math.min(100, Math.round((memMi / MEM_LIMIT_MI) * 100)) },
   });
 });
 
