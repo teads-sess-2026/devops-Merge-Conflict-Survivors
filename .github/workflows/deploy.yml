@@ -51,15 +51,36 @@ jobs:
           aws sts get-caller-identity
           aws eks describe-cluster --name $EKS_CLUSTER --region $AWS_REGION
 
-      - name: Update kubeconfig
+      - name: Configure kubeconfig with token
         run: |
-          aws eks update-kubeconfig --name $EKS_CLUSTER --region $AWS_REGION
-          cat ~/.kube/config
-          kubectl config view
+          ENDPOINT=$(aws eks describe-cluster --name $EKS_CLUSTER --region $AWS_REGION --query 'cluster.endpoint' --output text)
+          CA=$(aws eks describe-cluster --name $EKS_CLUSTER --region $AWS_REGION --query 'cluster.certificateAuthority.data' --output text)
+          TOKEN=$(aws eks get-token --cluster-name $EKS_CLUSTER --region $AWS_REGION --query 'status.token' --output text)
+
+          mkdir -p ~/.kube
+          cat > ~/.kube/config <<EOF
+          apiVersion: v1
+          kind: Config
+          clusters:
+          - name: $EKS_CLUSTER
+            cluster:
+              server: $ENDPOINT
+              certificate-authority-data: $CA
+          contexts:
+          - name: $EKS_CLUSTER
+            context:
+              cluster: $EKS_CLUSTER
+              user: $EKS_CLUSTER
+          current-context: $EKS_CLUSTER
+          users:
+          - name: $EKS_CLUSTER
+            user:
+              token: $TOKEN
+          EOF
 
       - name: Deploy to EKS
         env:
           IMAGE: ${{ steps.build.outputs.image }}
         run: |
           sed -i "s|IMAGE_PLACEHOLDER|$IMAGE|g" k8s/*.yaml
-          kubectl apply -f k8s/ --validate=false --insecure-skip-tls-verify
+          kubectl apply -f k8s/
