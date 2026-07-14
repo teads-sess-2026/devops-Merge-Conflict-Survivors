@@ -5,7 +5,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm install --production
 
-COPY server.js tracing.js 
+COPY server.js tracing.js ./
 COPY public/ ./public/
 
 EXPOSE 3000
