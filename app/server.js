@@ -232,14 +232,39 @@ app.post('/api/load-test', (req, res) => {
   }
   loadTestActive = true;
 
-  const durationMs = 30000;
+  const durationMs = 300000; // 5 minutes
   activeWorker = new Worker(`
+    const http = require('http');
     const { parentPort, workerData } = require('worker_threads');
+
     const end = Date.now() + workerData.durationMs;
-    while (Date.now() < end) {
-      Math.sqrt(Math.random() * 1e9);
-    }
-    parentPort.postMessage('done');
+    let active = 0;
+    const maxConcurrent = 150;
+
+    const doRequest = () => {
+      if (active >= maxConcurrent) return;
+      active++;
+      const req = http.get('http://localhost:3000/', () => {
+        active--;
+      });
+      req.on('error', () => {
+        active--;
+      });
+      req.setTimeout(5000, () => {
+        req.destroy();
+        active--;
+      });
+    };
+
+    const interval = setInterval(() => {
+      for (let i = 0; i < 50; i++) {
+        doRequest();
+      }
+      if (Date.now() >= end && active === 0) {
+        clearInterval(interval);
+        parentPort.postMessage('done');
+      }
+    }, 50);
   `, { eval: true, workerData: { durationMs } });
 
   activeWorker.on('message', () => {
