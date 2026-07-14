@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: IMAGE_PLACEHOLDER
+          image: 937697200280.dkr.ecr.eu-west-1.amazonaws.com/merge-conflict-survivors:344bead1deb150943c447190797511af3305859d
           imagePullPolicy: Always
           ports:
             - name: http
