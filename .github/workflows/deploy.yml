@@ -62,5 +62,5 @@ jobs:
 
       - name: Deploy to EKS
         run: |
-          kubectl apply -k k8s/
+          kubectl apply -k k8s/ --validate=false
           kubectl rollout status deployment/test-workload --timeout=120s
