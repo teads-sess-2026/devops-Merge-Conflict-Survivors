@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HPA Scaling — test-workload</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-void: #0E131C;
+    --bg-panel: #161D2A;
+    --bg-panel-raised: #1C2536;
+    --hairline: #263049;
+    --text-primary: #E8ECF5;
+    --text-muted: #7C89A3;
+    --text-faint: #4C5772;
+    --accent-signal: #5B8DEF;
+    --accent-good: #45D6C0;
+    --accent-warn: #F5A461;
+    --accent-good-dim: rgba(69, 214, 192, 0.14);
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(91, 141, 239, 0.10), transparent 45%),
+      radial-gradient(circle at 85% 100%, rgba(69, 214, 192, 0.06), transparent 40%),
+      var(--bg-void);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 640px;
+    background: var(--bg-panel);
+    border: 1px solid var(--hairline);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
+  }
+
+  /* --- Header --- */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--accent-good);
+    text-transform: uppercase;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent-good);
+    box-shadow: 0 0 0 0 rgba(69, 214, 192, 0.6);
+    animation: pulse 2.4s ease-out infinite;
+  }
+
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(69, 214, 192, 0.5); }
+    70%  { box-shadow: 0 0 0 8px rgba(69, 214, 192, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(69, 214, 192, 0); }
+  }
+
+  .pod-name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* --- Body --- */
+  .body { padding: 28px; }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin: 0 0 6px;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 28px;
+    letter-spacing: -0.01em;
+  }
+
+  /* --- Replica rack (signature element) --- */
+  .rack-section { margin-bottom: 30px; }
+
+  .rack-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+  }
+
+  .rack-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .rack-count {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--accent-good);
+  }
+
+  .rack-count .of { color: var(--text-faint); }
+
+  .rack {
+    display: flex;
+    gap: 5px;
+    height: 44px;
+  }
+
+  .slot {
+    flex: 1;
+    border-radius: 6px;
+    background: var(--bg-panel-raised);
+    border: 1px solid var(--hairline);
+    position: relative;
+    transition: background 0.4s ease, border-color 0.4s ease;
+  }
+
+  .slot.active {
+    background: var(--accent-good-dim);
+    border-color: rgba(69, 214, 192, 0.45);
+  }
+
+  .slot.active::after {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border-radius: 3px;
+    background: var(--accent-good);
+    opacity: 0.85;
+  }
+
+  .rack-scale {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text-faint);
+  }
+
+  /* --- Metric gauges --- */
+  .gauges {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .gauge {
+    background: var(--bg-panel-raised);
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+    padding: 18px;
+  }
+
+  .gauge-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 14px;
+  }
+
+  .gauge-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .gauge-value {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 500;
+  }
+
+  .gauge-sub {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text-faint);
+    margin-top: 2px;
+  }
+
+  .track {
+    height: 6px;
+    border-radius: 4px;
+    background: var(--hairline);
+    overflow: hidden;
+  }
+
+  .fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+
+  .fill.cpu { background: var(--accent-signal); }
+  .fill.mem { background: var(--accent-warn); }
+
+  /* --- Footer --- */
+  .footer {
+    border-top: 1px solid var(--hairline);
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .footer-label {
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+
+  .cmd {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--bg-void);
+    border: 1px solid var(--hairline);
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: var(--accent-good);
+  }
+
+  @media (max-width: 420px) {
+    .gauges { grid-template-columns: 1fr; }
+    .body { padding: 22px; }
+    .header { padding: 16px 22px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .status-dot { animation: none; }
+    .fill, .slot { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <div class="status"><span class="status-dot"></span>Live</div>
+    <div class="pod-name" id="hostname">test-workload-54dbb8d79b-84nrc</div>
+  </div>
+
+  <div class="body">
+    <p class="eyebrow">Horizontal Pod Autoscaler</p>
+    <h1>test-workload scaling</h1>
+
+    <div class="rack-section">
+      <div class="rack-labels">
+        <span class="rack-title">Running replicas</span>
+        <span class="rack-count"><span id="rack-current">4</span><span class="of">&nbsp;/&nbsp;10 max</span></span>
+      </div>
+      <div class="rack" id="rack"></div>
+      <div class="rack-scale">
+        <span>min 2</span>
+        <span>max 10</span>
+      </div>
+    </div>
+
+    <div class="gauges">
+      <div class="gauge">
+        <div class="gauge-top">
+          <div>
+            <div class="gauge-label">CPU</div>
+            <div class="gauge-sub">target 80%</div>
+          </div>
+          <div class="gauge-value" id="cpu-value">34%</div>
+        </div>
+        <div class="track"><div class="fill cpu" id="cpu-fill" style="width: 34%"></div></div>
+      </div>
+
+      <div class="gauge">
+        <div class="gauge-top">
+          <div>
+            <div class="gauge-label">Memory</div>
+            <div class="gauge-sub">limit 128Mi</div>
+          </div>
+          <div class="gauge-value" id="mem-value">58Mi</div>
+        </div>
+        <div class="track"><div class="fill mem" id="mem-fill" style="width: 45%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span class="footer-label">Full status</span>
+    <span class="cmd">kubectl get hpa test-workload-hpa</span>
+  </div>
+</div>
+
+<script>
+  const POLL_MS = 4000;
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function renderRack(current, min, max) {
+    const rack = document.getElementById('rack');
+    rack.innerHTML = '';
+    for (let i = 1; i <= max; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'slot' + (i <= current ? ' active' : '');
+      rack.appendChild(slot);
+    }
+  }
+
+  function applyUpdate(data) {
+    document.getElementById('hostname').textContent = data.hostname;
+    document.getElementById('rack-current').textContent = data.current;
+    renderRack(data.current, data.min, data.max);
+
+    document.getElementById('cpu-value').textContent = data.cpu.value;
+    document.getElementById('mem-value').textContent = data.memory.value;
+
+    const cpuFill = document.getElementById('cpu-fill');
+    const memFill = document.getElementById('mem-fill');
+    cpuFill.style.width = data.cpu.pct + '%';
+    memFill.style.width = data.memory.pct + '%';
+  }
+
+  async function poll() {
+    try {
+      const res = await fetch('/api/scaling');
+      if (!res.ok) throw new Error('bad response: ' + res.status);
+      const data = await res.json();
+      applyUpdate(data);
+    } catch (e) {
+      console.error('scaling poll failed', e);
+    }
+  }
+
+  poll();
+  // Reduced-motion users still get updated data, just without the transition animation
+  // (the CSS already disables .fill/.slot transitions under prefers-reduced-motion).
+  setInterval(poll, POLL_MS);
+</script>
+
+</body>
+</html>
