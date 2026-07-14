@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-auth
+  namespace: kube-system
+data:
+  mapRoles: |
+    - rolearn: arn:aws:iam::937697200280:role/eks-node-role-merge-conflict-survivors
+      username: system:node:{{EC2PrivateDNSName}}
+      groups:
+        - system:bootstrappers
+        - system:nodes
+  mapUsers: |
+    - userarn: GITHUB_ACTIONS_ROLE_ARN_PLACEHOLDER
+      username: github-actions
+      groups:
+        - system:masters

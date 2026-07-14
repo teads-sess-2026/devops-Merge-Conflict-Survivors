@@ -47,21 +47,21 @@ jobs:
           sudo mv kubectl /usr/local/bin/
 
       - name: Create kubeconfig with token
+        run: python3 scripts/create-kubeconfig.py
+
+      - name: Apply aws-auth ConfigMap
+        env:
+          GITHUB_ACTIONS_ROLE_ARN: arn:aws:iam::937697200280:role/github-actions-role
         run: |
-          python3 scripts/create-kubeconfig.py
-          echo "=== Kubeconfig ==="
-          cat ~/.kube/config
-          echo "=== kubectl config view ==="
-          kubectl config view
-          echo "=== kubectl cluster-info ==="
-          kubectl cluster-info
+          sed -i "s|GITHUB_ACTIONS_ROLE_ARN_PLACEHOLDER|$GITHUB_ACTIONS_ROLE_ARN|g" k8s/aws-auth.yaml
+          kubectl apply -f k8s/aws-auth.yaml --validate=false
 
       - name: Deploy to EKS
         env:
           IMAGE: ${{ steps.build.outputs.image }}
         run: |
-          sed -i "s|IMAGE_PLACEHOLDER|$IMAGE|g" k8s/*.yaml
+          sed -i "s|IMAGE_PLACEHOLDER|$IMAGE|g" k8s/deployment.yaml k8s/service.yaml
           echo "=== Deployment manifest ==="
           cat k8s/deployment.yaml
           echo "=== Applying ==="
-          kubectl apply -f k8s/ --validate=false
+          kubectl apply -f k8s/deployment.yaml k8s/service.yaml --validate=false
