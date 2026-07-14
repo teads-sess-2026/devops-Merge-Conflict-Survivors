@@ -239,7 +239,7 @@ app.post('/api/load-test', (req, res) => {
 
     const end = Date.now() + workerData.durationMs;
     let active = 0;
-    const maxConcurrent = 150;
+    const maxConcurrent = 500;
 
     const doRequest = () => {
       if (active >= maxConcurrent) return;
@@ -250,21 +250,21 @@ app.post('/api/load-test', (req, res) => {
       req.on('error', () => {
         active--;
       });
-      req.setTimeout(5000, () => {
+      req.setTimeout(3000, () => {
         req.destroy();
         active--;
       });
     };
 
     const interval = setInterval(() => {
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < 200; i++) {
         doRequest();
       }
       if (Date.now() >= end && active === 0) {
         clearInterval(interval);
         parentPort.postMessage('done');
       }
-    }, 50);
+    }, 10);
   `, { eval: true, workerData: { durationMs } });
 
   activeWorker.on('message', () => {
