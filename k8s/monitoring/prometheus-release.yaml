@@ -67,11 +67,6 @@ spec:
         datasources.yaml:
           apiVersion: 1
           datasources:
-          - name: Prometheus
-            type: prometheus
-            url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
-            isDefault: true
-            access: proxy
           - name: Loki
             type: loki
             url: http://loki.monitoring.svc.cluster.local:3100
