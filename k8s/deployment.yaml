@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: app
-        image: 937697200280.dkr.ecr.eu-west-1.amazonaws.com/merge-conflict-survivors:36609231f43b5d93a8964754145ce9250ab27bae
+        image: 937697200280.dkr.ecr.eu-west-1.amazonaws.com/merge-conflict-survivors:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
