@@ -176,16 +176,16 @@ function queryK8sAPI(path) {
 async function getPodCount() {
   try {
     const result = await queryK8sAPI('/api/v1/namespaces/default/pods?labelSelector=app=test-workload');
-    console.log('K8s API response:', JSON.stringify(result, null, 2));
-    if (result.items) {
-      console.log(`Found ${result.items.length} pods`);
+    console.log('K8s API full response:', JSON.stringify(result));
+    if (result && result.items) {
+      console.log(`Found ${result.items.length} pods:`, result.items.map(p => p.metadata.name));
       return result.items.length;
     }
-    console.log('No items in response');
+    console.log('No items in response, result:', result);
     return 0;
   } catch (e) {
-    console.error('Error fetching pod count:', e.message);
-    return null;
+    console.error('Error fetching pod count:', e.message, e);
+    return 0;
   }
 }
 
