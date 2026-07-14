@@ -6,6 +6,7 @@ const { trace, context } = require('@opentelemetry/api');
 const swaggerUi = require('swagger-ui-express');
 const https = require('https');
 const fs = require('fs');
+const { Worker } = require('worker_threads');
 
 const app = express();
 const port = 3000;
@@ -279,6 +280,36 @@ app.get('/api/scaling', async (req, res) => {
     cpu: { value: metrics.cpu, pct: cpuProgressPct },
     memory: { value: metrics.memory, pct: Math.min(100, Math.round((memMi / MEM_LIMIT_MI) * 100)) },
   });
+});
+
+// --- Load test (add this block) ---
+
+let loadTestActive = false;
+
+app.post('/api/load-test', (req, res) => {
+  if (loadTestActive) {
+    return res.status(409).json({ error: 'Load test already running' });
+  }
+  loadTestActive = true;
+
+  const durationMs = 30000;
+  const worker = new Worker(`
+    const { parentPort, workerData } = require('worker_threads');
+    const end = Date.now() + workerData.durationMs;
+    while (Date.now() < end) {
+      Math.sqrt(Math.random() * 1e9);
+    }
+    parentPort.postMessage('done');
+  `, { eval: true, workerData: { durationMs } });
+
+  worker.on('message', () => { loadTestActive = false; });
+  worker.on('error', () => { loadTestActive = false; });
+
+  res.json({ status: 'started', durationMs });
+});
+
+app.get('/api/load-test/status', (req, res) => {
+  res.json({ active: loadTestActive });
 });
 
 // --- Start ---

@@ -267,6 +267,19 @@
     .status-dot { animation: none; }
     .fill, .slot { transition: none; }
   }
+
+.load-btn {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--accent-warn);
+  color: var(--bg-void);
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.load-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -321,6 +334,7 @@
   <div class="footer">
     <span class="footer-label">Full status</span>
     <span class="cmd">kubectl get hpa test-workload-hpa</span>
+    <button id="load-test-btn" class="load-btn">Run load test</button>
   </div>
 </div>
 
@@ -343,7 +357,7 @@
     document.getElementById('rack-current').textContent = data.current;
     renderRack(data.current, data.min, data.max);
 
-    document.getElementById('cpu-value').textContent = data.cpu.value;
+    document.getElementById('cpu-value').textContent = data.cpu.pct + '%';
     document.getElementById('mem-value').textContent = data.memory.value;
 
     const cpuFill = document.getElementById('cpu-fill');
@@ -366,7 +380,17 @@
   poll();
   // Reduced-motion users still get updated data, just without the transition animation
   // (the CSS already disables .fill/.slot transitions under prefers-reduced-motion).
-  setInterval(poll, POLL_MS);
+setInterval(poll, POLL_MS);
+
+document.getElementById('load-test-btn').addEventListener('click', async (e) => {
+  e.target.disabled = true;
+  e.target.textContent = 'Running...';
+  await fetch('/api/load-test', { method: 'POST' });
+  setTimeout(() => {
+    e.target.disabled = false;
+    e.target.textContent = 'Run load test';
+  }, 30000);
+});
 </script>
 
 </body>
