@@ -5,6 +5,9 @@ resources:
 - deployment.yaml
 - hpa.yaml
 - service.yaml
+- karpenter-helmrepo.yaml
+- karpenter-release.yaml
+- karpenter-provisioner.yaml
 
 images:
 - name: app-image
