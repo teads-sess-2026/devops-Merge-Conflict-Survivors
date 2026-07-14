@@ -3,3 +3,4 @@
 terraform.*
 tfplan
 .DS_Store
+token.txt
