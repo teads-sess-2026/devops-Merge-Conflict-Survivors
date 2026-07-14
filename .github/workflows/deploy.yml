@@ -49,4 +49,4 @@ jobs:
           IMAGE: ${{ steps.build.outputs.image }}
         run: |
           sed -i "s|IMAGE_PLACEHOLDER|$IMAGE|g" k8s/*.yaml
-          kubectl apply -f k8s/
+          kubectl apply -f k8s/ --validate=false

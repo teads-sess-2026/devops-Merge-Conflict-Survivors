@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
       - name: app
-        image: test-workload:latest
-        imagePullPolicy: IfNotPresent
+        image: IMAGE_PLACEHOLDER
+        imagePullPolicy: Always
         ports:
         - containerPort: 3000
           name: http
