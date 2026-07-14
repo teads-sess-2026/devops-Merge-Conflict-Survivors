@@ -350,10 +350,6 @@
 
   <div class="footer">
     <span class="cmd">kubectl get hpa test-workload-hpa</span>
-    <div class="btn-group">
-      <button id="load-test-btn" class="load-btn">Run load test</button>
-      <button id="stop-test-btn" class="stop-btn" disabled>Stop test</button>
-    </div>
   </div>
 </div>
 
@@ -393,54 +389,8 @@
     }
   }
 
-  let testRunning = false;
-
-  async function pollLoadTestStatus() {
-    try {
-      const res = await fetch('/api/load-test/status');
-      const data = await res.json();
-
-      const runBtn = document.getElementById('load-test-btn');
-      const stopBtn = document.getElementById('stop-test-btn');
-
-      // Only update if state actually changed
-      if (testRunning !== data.active) {
-        testRunning = data.active;
-        runBtn.disabled = data.active;
-        runBtn.textContent = data.active ? 'Running...' : 'Run load test';
-        stopBtn.disabled = !data.active;
-      }
-    } catch (e) {
-      console.error('load-test status poll failed', e);
-    }
-  }
-
   poll();
-  pollLoadTestStatus();
   setInterval(poll, POLL_MS);
-  setInterval(pollLoadTestStatus, 1000);
-
-  document.getElementById('load-test-btn').addEventListener('click', async (e) => {
-    e.target.disabled = true;
-    e.target.textContent = 'Running...';
-    document.getElementById('stop-test-btn').disabled = false;
-    try {
-      await fetch('/api/load-test', { method: 'POST' });
-    } catch (err) {
-      console.error('failed to start load test', err);
-    }
-  });
-
-  document.getElementById('stop-test-btn').addEventListener('click', async (e) => {
-    e.target.disabled = true;
-    try {
-      await fetch('/api/load-test/stop', { method: 'POST' });
-    } catch (err) {
-      console.error('failed to stop load test', err);
-    }
-    document.getElementById('load-test-btn').disabled = false;
-    document.getElementById('load-test-btn').textContent = 'Run load test';
-  });
 </script>
 
 </body>
