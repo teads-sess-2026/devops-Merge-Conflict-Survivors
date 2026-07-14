@@ -11,7 +11,6 @@ permissions:
 
 env:
   ECR_REPOSITORY: merge-conflict-survivors
-  EKS_CLUSTER: eks-merge-conflict-survivors
   AWS_REGION: eu-west-1
 
 jobs:
@@ -30,7 +29,7 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push image
+      - name: Build and push Docker image
         env:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
@@ -39,29 +38,3 @@ jobs:
           docker push $REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "image=$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
         id: build
-
-      - name: Install kubectl
-        run: |
-          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          chmod +x kubectl
-          sudo mv kubectl /usr/local/bin/
-
-      - name: Create kubeconfig with token
-        run: python3 scripts/create-kubeconfig.py
-
-      - name: Setup aws-auth ConfigMap
-        env:
-          GITHUB_ACTIONS_ROLE_ARN: arn:aws:iam::937697200280:role/github-actions-role
-        run: |
-          chmod +x scripts/setup-aws-auth.sh
-          scripts/setup-aws-auth.sh $EKS_CLUSTER "$GITHUB_ACTIONS_ROLE_ARN"
-
-      - name: Deploy to EKS
-        env:
-          IMAGE: ${{ steps.build.outputs.image }}
-        run: |
-          sed -i "s|IMAGE_PLACEHOLDER|$IMAGE|g" k8s/deployment.yaml k8s/service.yaml
-          echo "=== Deployment manifest ==="
-          cat k8s/deployment.yaml
-          echo "=== Applying ==="
-          kubectl apply -f k8s/deployment.yaml k8s/service.yaml --validate=false
