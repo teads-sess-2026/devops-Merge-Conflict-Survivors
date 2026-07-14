@@ -8,4 +8,3 @@ resources:
   - monitoring/
   - website/
   - image-automation.yaml
-  - website/
