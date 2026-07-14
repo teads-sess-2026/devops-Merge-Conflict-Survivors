@@ -191,6 +191,34 @@ async function getPodCount() {
   }
 }
 
+async function getPodMetrics() {
+  try {
+    const result = await queryK8sAPI('/apis/metrics.k8s.io/v1beta1/namespaces/default/pods?labelSelector=app=test-workload');
+    if (!result || !result.items || result.items.length === 0) {
+      return { cpu: 'N/A', memory: 'N/A' };
+    }
+
+    let totalCpu = 0, totalMemory = 0;
+    result.items.forEach(pod => {
+      const container = pod.containers[0];
+      if (container) {
+        const cpu = parseInt(container.usage.cpu) || 0;
+        const mem = parseInt(container.usage.memory) || 0;
+        totalCpu += cpu;
+        totalMemory += mem;
+      }
+    });
+
+    const avgCpu = Math.round(totalCpu / result.items.length);
+    const avgMemory = Math.round(totalMemory / result.items.length / 1024 / 1024);
+
+    return { cpu: avgCpu + 'm', memory: avgMemory + 'Mi' };
+  } catch (e) {
+    console.error('Error fetching metrics:', e.message);
+    return { cpu: 'N/A', memory: 'N/A' };
+  }
+}
+
 // --- Routes ---
 
 app.get('/health', (req, res) => {
@@ -210,14 +238,10 @@ app.get('/metrics', async (req, res) => {
   res.end(await register.metrics());
 });
 
-app.get('/scaling-debug', async (req, res) => {
-  const podCount = await getPodCount();
-  res.json({ podCount, hostname: process.env.HOSTNAME });
-});
-
 app.get('/scaling', async (req, res) => {
   console.log('GET /scaling called');
   const podCount = await getPodCount();
+  const metrics = await getPodMetrics();
   console.log('Pod count result:', podCount);
   const podCountDisplay = podCount !== null ? podCount : 'Unable to fetch';
 
@@ -270,6 +294,14 @@ app.get('/scaling', async (req, res) => {
       <div class="metric-card">
         <div class="label">Target CPU</div>
         <div class="value">80%</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">Avg CPU Usage</div>
+        <div class="value">${metrics.cpu}</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">Avg Memory Usage</div>
+        <div class="value">${metrics.memory}</div>
       </div>
     </div>
 
