@@ -49,12 +49,12 @@ jobs:
       - name: Create kubeconfig with token
         run: python3 scripts/create-kubeconfig.py
 
-      - name: Apply aws-auth ConfigMap
+      - name: Setup aws-auth ConfigMap
         env:
           GITHUB_ACTIONS_ROLE_ARN: arn:aws:iam::937697200280:role/github-actions-role
         run: |
-          sed -i "s|GITHUB_ACTIONS_ROLE_ARN_PLACEHOLDER|$GITHUB_ACTIONS_ROLE_ARN|g" k8s/aws-auth.yaml
-          kubectl apply -f k8s/aws-auth.yaml --validate=false
+          chmod +x scripts/setup-aws-auth.sh
+          scripts/setup-aws-auth.sh $EKS_CLUSTER "$GITHUB_ACTIONS_ROLE_ARN"
 
       - name: Deploy to EKS
         env:
