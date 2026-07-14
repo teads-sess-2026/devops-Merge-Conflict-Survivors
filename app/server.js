@@ -208,8 +208,15 @@ app.get('/metrics', async (req, res) => {
   res.end(await register.metrics());
 });
 
-app.get('/scaling', async (req, res) => {
+app.get('/scaling-debug', async (req, res) => {
   const podCount = await getPodCount();
+  res.json({ podCount, hostname: process.env.HOSTNAME });
+});
+
+app.get('/scaling', async (req, res) => {
+  console.log('GET /scaling called');
+  const podCount = await getPodCount();
+  console.log('Pod count result:', podCount);
   const podCountDisplay = podCount !== null ? podCount : 'Unable to fetch';
 
   const html = `
