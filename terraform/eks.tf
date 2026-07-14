@@ -56,6 +56,14 @@ resource "aws_security_group" "eks_cluster" {
     security_groups = [aws_security_group.vps_merge_conflict_survivors.id]
   }
 
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow public access for CI/CD (GitHub Actions)"
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -72,8 +80,10 @@ resource "aws_eks_cluster" "main" {
   version  = "1.30"
 
   vpc_config {
-    subnet_ids         = [aws_subnet.private_a.id, aws_subnet.private_b.id]
-    security_group_ids = [aws_security_group.eks_cluster.id]
+    subnet_ids              = [aws_subnet.private_a.id, aws_subnet.private_b.id]
+    security_group_ids      = [aws_security_group.eks_cluster.id]
+    endpoint_private_access = true
+    endpoint_public_access  = true
   }
 
   depends_on = [aws_iam_role_policy_attachment.eks_cluster]
