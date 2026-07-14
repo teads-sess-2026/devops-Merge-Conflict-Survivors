@@ -29,7 +29,7 @@ resource "aws_iam_role" "github_actions" {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:teads-sess-2026/teads-summer-school-2026:*"
+            "token.actions.githubusercontent.com:sub" = "repo:teads-sess-2026/*"
           }
         }
       }
