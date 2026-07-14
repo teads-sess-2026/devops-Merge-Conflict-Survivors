@@ -7,7 +7,7 @@ on:
 
 permissions:
   id-token: write
-  contents: read
+  contents: write
 
 env:
   ECR_REPOSITORY: merge-conflict-survivors
@@ -38,3 +38,17 @@ jobs:
           docker push $REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "image=$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
         id: build
+
+      - name: Update deployment manifest
+        env:
+          IMAGE: ${{ steps.build.outputs.image }}
+        run: |
+          sed -i "s|IMAGE_PLACEHOLDER|$IMAGE|g" k8s/deployment.yaml
+
+      - name: Commit and push manifests
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add k8s/deployment.yaml
+          git commit -m "Update image to ${{ github.sha }}" || true
+          git push
