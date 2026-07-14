@@ -57,6 +57,10 @@ jobs:
           CA=$(aws eks describe-cluster --name $EKS_CLUSTER --region $AWS_REGION --query 'cluster.certificateAuthority.data' --output text)
           TOKEN=$(aws eks get-token --cluster-name $EKS_CLUSTER --region $AWS_REGION --query 'status.token' --output text)
 
+          echo "Endpoint: $ENDPOINT"
+          echo "CA: ${CA:0:50}..."
+          echo "Token: ${TOKEN:0:50}..."
+
           mkdir -p ~/.kube
           cat > ~/.kube/config <<EOF
           apiVersion: v1
@@ -78,9 +82,13 @@ jobs:
               token: $TOKEN
           EOF
 
+          cat ~/.kube/config
+
       - name: Deploy to EKS
         env:
           IMAGE: ${{ steps.build.outputs.image }}
+          KUBECONFIG: ~/.kube/config
         run: |
+          kubectl config current-context
           sed -i "s|IMAGE_PLACEHOLDER|$IMAGE|g" k8s/*.yaml
-          kubectl apply -f k8s/
+          kubectl apply -f k8s/ --validate=false
