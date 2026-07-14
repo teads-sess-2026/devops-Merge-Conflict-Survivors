@@ -46,9 +46,8 @@ jobs:
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/
 
-      - name: Update kubeconfig
-        run: |
-          aws eks update-kubeconfig --name $EKS_CLUSTER --region $AWS_REGION
+      - name: Create kubeconfig with token
+        run: python3 scripts/create-kubeconfig.py
 
       - name: Deploy to EKS
         env:
