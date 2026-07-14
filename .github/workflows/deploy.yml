@@ -46,10 +46,16 @@ jobs:
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/
 
+      - name: Verify AWS credentials
+        run: |
+          aws sts get-caller-identity
+          aws eks describe-cluster --name $EKS_CLUSTER --region $AWS_REGION
+
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig --name $EKS_CLUSTER --region $AWS_REGION
-          kubectl cluster-info
+          cat ~/.kube/config
+          kubectl config view
 
       - name: Deploy to EKS
         env:
