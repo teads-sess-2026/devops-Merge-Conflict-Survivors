@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>test-workload — Kubernetes Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-void: #0E131C;
+    --bg-panel: #161D2A;
+    --bg-panel-raised: #1C2536;
+    --hairline: #263049;
+    --text-primary: #E8ECF5;
+    --text-muted: #7C89A3;
+    --text-faint: #4C5772;
+    --accent-signal: #5B8DEF;
+    --accent-good: #45D6C0;
+    --accent-warn: #F5A461;
+    --accent-good-dim: rgba(69, 214, 192, 0.14);
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(91, 141, 239, 0.10), transparent 45%),
+      radial-gradient(circle at 85% 100%, rgba(69, 214, 192, 0.06), transparent 40%),
+      var(--bg-void);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 640px;
+    background: var(--bg-panel);
+    border: 1px solid var(--hairline);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--accent-good);
+    text-transform: uppercase;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent-good);
+    box-shadow: 0 0 0 0 rgba(69, 214, 192, 0.6);
+    animation: pulse 2.4s ease-out infinite;
+  }
+
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(69, 214, 192, 0.5); }
+    70%  { box-shadow: 0 0 0 8px rgba(69, 214, 192, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(69, 214, 192, 0); }
+  }
+
+  .pod-name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .body { padding: 28px; }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin: 0 0 6px;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    letter-spacing: -0.01em;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 0 0 32px;
+    line-height: 1.5;
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 12px;
+  }
+
+  .btn-primary {
+    display: inline-block;
+    padding: 12px 24px;
+    background: var(--accent-good);
+    color: var(--bg-void);
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(69, 214, 192, 0.2);
+  }
+
+  .btn-secondary {
+    display: inline-block;
+    padding: 12px 24px;
+    background: transparent;
+    color: var(--accent-good);
+    border: 1px solid var(--accent-good);
+    border-radius: 8px;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-secondary:hover {
+    transform: translateY(-2px);
+    background: rgba(69, 214, 192, 0.1);
+  }
+
+  @media (max-width: 420px) {
+    .btn-group { flex-direction: column; }
+  }
+
+  .footer {
+    border-top: 1px solid var(--hairline);
+    padding: 16px 28px;
+    font-size: 12px;
+    color: var(--text-faint);
+    text-align: center;
+  }
+
+  @media (max-width: 420px) {
+    h1 { font-size: 24px; }
+    .nav-grid { grid-template-columns: 1fr; }
+    .body { padding: 22px; }
+    .header { padding: 16px 22px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .status-dot { animation: none; }
+    .nav-card { transition: none; }
+    .nav-arrow { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <div class="status"><span class="status-dot"></span>Online</div>
+    <div class="pod-name" id="hostname">test-workload</div>
+  </div>
+
+  <div class="body">
+    <p class="eyebrow">Kubernetes Test Workload</p>
+    <h1>Observability Demo</h1>
+    <p class="subtitle">Monitor scaling behavior and system metrics across distributed infrastructure.</p>
+
+    <div class="btn-group">
+      <a href="/scaling" class="btn-primary">Scaling</a>
+      <a href="/metrics" class="btn-secondary">Metrics</a>
+    </div>
+  </div>
+
+  <div class="footer">
+    test-workload running on Kubernetes
+  </div>
+</div>
+
+<script>
+  document.getElementById('hostname').textContent = '{{ hostname }}' || 'test-workload';
+</script>
+
+</body>
+</html>
