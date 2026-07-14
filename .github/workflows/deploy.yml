@@ -57,31 +57,32 @@ jobs:
           CA=$(aws eks describe-cluster --name $EKS_CLUSTER --region $AWS_REGION --query 'cluster.certificateAuthority.data' --output text)
           TOKEN=$(aws eks get-token --cluster-name $EKS_CLUSTER --region $AWS_REGION --query 'status.token' --output text)
 
-          echo "Endpoint: $ENDPOINT"
-          echo "CA: ${CA:0:50}..."
-          echo "Token: ${TOKEN:0:50}..."
-
           mkdir -p ~/.kube
-          cat > ~/.kube/config <<EOF
-          apiVersion: v1
-          kind: Config
-          clusters:
-          - name: $EKS_CLUSTER
-            cluster:
-              server: $ENDPOINT
-              certificate-authority-data: $CA
-          contexts:
-          - name: $EKS_CLUSTER
-            context:
-              cluster: $EKS_CLUSTER
-              user: $EKS_CLUSTER
-          current-context: $EKS_CLUSTER
-          users:
-          - name: $EKS_CLUSTER
-            user:
-              token: $TOKEN
-          EOF
+          cat > ~/.kube/config <<'EOF'
+apiVersion: v1
+kind: Config
+clusters:
+- name: eks-cluster
+  cluster:
+    server: ENDPOINT_PLACEHOLDER
+    certificate-authority-data: CA_PLACEHOLDER
+contexts:
+- name: eks-cluster
+  context:
+    cluster: eks-cluster
+    user: eks-cluster
+current-context: eks-cluster
+users:
+- name: eks-cluster
+  user:
+    token: TOKEN_PLACEHOLDER
+EOF
 
+          sed -i "s|ENDPOINT_PLACEHOLDER|$ENDPOINT|g" ~/.kube/config
+          sed -i "s|CA_PLACEHOLDER|$CA|g" ~/.kube/config
+          sed -i "s|TOKEN_PLACEHOLDER|$TOKEN|g" ~/.kube/config
+
+          echo "Kubeconfig created:"
           cat ~/.kube/config
 
       - name: Deploy to EKS
