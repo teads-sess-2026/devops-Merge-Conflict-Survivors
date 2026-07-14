@@ -77,7 +77,7 @@ resource "aws_security_group" "eks_cluster" {
 resource "aws_eks_cluster" "main" {
   name     = "eks-merge-conflict-survivors"
   role_arn = aws_iam_role.eks_cluster.arn
-  version  = "1.30"
+  version  = "1.35"
 
   vpc_config {
     subnet_ids              = [aws_subnet.private_a.id, aws_subnet.private_b.id]
@@ -116,4 +116,16 @@ resource "aws_eks_node_group" "main" {
   ]
 
   tags = { Name = "eks-nodes-merge-conflict-survivors" }
+}
+
+resource "null_resource" "update_kubeconfig" {
+  triggers = {
+    cluster_name = aws_eks_cluster.main.name
+  }
+
+  provisioner "local-exec" {
+    command = "aws eks update-kubeconfig --region eu-west-1 --name ${aws_eks_cluster.main.name} --profile summer-school"
+  }
+
+  depends_on = [aws_eks_node_group.main]
 }
