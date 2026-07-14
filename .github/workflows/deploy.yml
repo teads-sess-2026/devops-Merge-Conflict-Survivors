@@ -46,50 +46,13 @@ jobs:
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/
 
-      - name: Verify AWS credentials
+      - name: Update kubeconfig
         run: |
-          aws sts get-caller-identity
-          aws eks describe-cluster --name $EKS_CLUSTER --region $AWS_REGION
-
-      - name: Configure kubeconfig with token
-        run: |
-          ENDPOINT=$(aws eks describe-cluster --name $EKS_CLUSTER --region $AWS_REGION --query 'cluster.endpoint' --output text)
-          CA=$(aws eks describe-cluster --name $EKS_CLUSTER --region $AWS_REGION --query 'cluster.certificateAuthority.data' --output text)
-          TOKEN=$(aws eks get-token --cluster-name $EKS_CLUSTER --region $AWS_REGION --query 'status.token' --output text)
-
-          mkdir -p ~/.kube
-          cat > ~/.kube/config <<'EOF'
-apiVersion: v1
-kind: Config
-clusters:
-- name: eks-cluster
-  cluster:
-    server: ENDPOINT_PLACEHOLDER
-    certificate-authority-data: CA_PLACEHOLDER
-contexts:
-- name: eks-cluster
-  context:
-    cluster: eks-cluster
-    user: eks-cluster
-current-context: eks-cluster
-users:
-- name: eks-cluster
-  user:
-    token: TOKEN_PLACEHOLDER
-EOF
-
-          sed -i "s|ENDPOINT_PLACEHOLDER|$ENDPOINT|g" ~/.kube/config
-          sed -i "s|CA_PLACEHOLDER|$CA|g" ~/.kube/config
-          sed -i "s|TOKEN_PLACEHOLDER|$TOKEN|g" ~/.kube/config
-
-          echo "Kubeconfig created:"
-          cat ~/.kube/config
+          aws eks update-kubeconfig --name $EKS_CLUSTER --region $AWS_REGION
 
       - name: Deploy to EKS
         env:
           IMAGE: ${{ steps.build.outputs.image }}
-          KUBECONFIG: ~/.kube/config
         run: |
-          kubectl config current-context
           sed -i "s|IMAGE_PLACEHOLDER|$IMAGE|g" k8s/*.yaml
           kubectl apply -f k8s/ --validate=false
