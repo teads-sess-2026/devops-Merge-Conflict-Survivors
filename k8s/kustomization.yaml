@@ -8,8 +8,3 @@ resources:
 - karpenter-helmrepo.yaml
 - karpenter-release.yaml
 - karpenter-provisioner.yaml
-
-images:
-- name: app-image
-  newName: 937697200280.dkr.ecr.eu-west-1.amazonaws.com/merge-conflict-survivors
-  newTag: c4d697ca20aef135e9eab226e0d61d194deb423e
