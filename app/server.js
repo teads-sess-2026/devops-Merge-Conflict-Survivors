@@ -159,6 +159,15 @@ app.get('/metrics', async (req, res) => {
   res.end(await register.metrics());
 });
 
+app.get('/scaling', (req, res) => {
+  res.status(200).json({
+    message: 'HPA Scaling Information',
+    info: 'View HPA status with: kubectl get hpa test-workload-hpa',
+    pod_name: process.env.HOSTNAME,
+    note: 'This pod is part of an auto-scaling deployment (2-10 replicas based on CPU/memory usage)'
+  });
+});
+
 // --- Start ---
 
 app.listen(port, () => {
