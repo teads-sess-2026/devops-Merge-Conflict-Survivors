@@ -6,6 +6,7 @@ const { trace, context } = require('@opentelemetry/api');
 const swaggerUi = require('swagger-ui-express');
 const https = require('https');
 const fs = require('fs');
+const path = require('path');
 const { Worker } = require('worker_threads');
 
 const app = express();
@@ -32,9 +33,6 @@ const httpRequestsTotal = new client.Counter({
 });
 
 // --- Middleware: metrics + structured request logging ---
-// Writes one JSON line per request to stdout so Promtail picks it up.
-// The traceId comes from the active OTel span (set by auto-instrumentation),
-// which is the same ID Tempo stores — Grafana uses it to jump between log and trace.
 
 app.use((req, res, next) => {
   const start = process.hrtime.bigint();
@@ -76,66 +74,25 @@ const openApiSpec = {
     '/': {
       get: {
         summary: 'Hello endpoint',
-        description: 'Returns a greeting with the pod hostname and current timestamp.',
-        responses: {
-          200: {
-            description: 'Successful response',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    message: { type: 'string', example: 'Hello from Kubernetes!' },
-                    hostname: { type: 'string', example: 'test-workload-6d9f7b8c4-xk9tz' },
-                    timestamp: { type: 'string', format: 'date-time' },
-                  },
-                },
-              },
-            },
-          },
-        },
+        responses: { 200: { description: 'Successful response' } },
       },
     },
     '/health': {
       get: {
         summary: 'Health check',
-        description: 'Used by Kubernetes liveness and readiness probes.',
-        responses: {
-          200: {
-            description: 'Service is healthy',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    status: { type: 'string', example: 'healthy' },
-                  },
-                },
-              },
-            },
-          },
-        },
+        responses: { 200: { description: 'Service is healthy' } },
       },
     },
     '/metrics': {
       get: {
         summary: 'Prometheus metrics',
-        description: 'Scraped by Prometheus. Exposes HTTP request counters/histograms and Node.js runtime metrics.',
-        responses: {
-          200: {
-            description: 'Prometheus text format',
-            content: { 'text/plain': {} },
-          },
-        },
+        responses: { 200: { description: 'Prometheus text format' } },
       },
     },
     '/docs': {
       get: {
         summary: 'Swagger UI',
-        description: 'This page.',
-        responses: {
-          200: { description: 'HTML page' },
-        },
+        responses: { 200: { description: 'HTML page' } },
       },
     },
   },
@@ -145,18 +102,16 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
 // --- Kubernetes API ---
 
-function queryK8sAPI(path) {
+function queryK8sAPI(apiPath) {
   return new Promise((resolve, reject) => {
     const token = fs.readFileSync('/var/run/secrets/kubernetes.io/serviceaccount/token', 'utf8');
     const ca = fs.readFileSync('/var/run/secrets/kubernetes.io/serviceaccount/ca.crt', 'utf8');
 
     const options = {
       hostname: 'kubernetes.default.svc.cluster.local',
-      path,
+      path: apiPath,
       method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
       ca,
     };
 
@@ -176,45 +131,32 @@ function queryK8sAPI(path) {
 
 async function getPodCount() {
   try {
-    console.log('Querying K8s API for pods...');
     const result = await queryK8sAPI('/api/v1/namespaces/default/pods?labelSelector=app=test-workload');
-    console.log('K8s API response kind:', result.kind, 'items count:', result.items ? result.items.length : 'N/A');
-    if (result && result.items && result.items.length > 0) {
-      console.log(`Found ${result.items.length} pods:`, result.items.map(p => p.metadata.name));
-      return result.items.length;
-    }
-    console.log('Query succeeded but no items. Full response:', JSON.stringify(result).substring(0, 200));
-    return result.items ? result.items.length : 0;
+    return result && result.items ? result.items.length : 0;
   } catch (e) {
     console.error('Error fetching pod count:', e.message);
-    console.error('Stack:', e.stack);
     return 0;
   }
 }
 
 async function getPodMetrics() {
   try {
-    console.log('Querying metrics API...');
     const result = await queryK8sAPI('/apis/metrics.k8s.io/v1beta1/namespaces/default/pods?labelSelector=app=test-workload');
-    console.log('Metrics result:', JSON.stringify(result).substring(0, 300));
     if (!result || !result.items || result.items.length === 0) {
-      console.log('No metrics items found');
       return { cpu: 'N/A', memory: 'N/A' };
     }
 
     let totalCpuNano = 0, totalMemoryKi = 0;
     result.items.forEach(pod => {
-      const container = pod.containers[0];
-      if (container) {
-        // cpu usage is a string like "8254438n" (nanocores) or occasionally "23m" (millicores)
-        const cpuStr = container.usage.cpu;
+      const c = pod.containers[0];
+      if (c) {
+        const cpuStr = c.usage.cpu;
         const cpuNano = cpuStr.endsWith('n')
           ? parseInt(cpuStr)
           : cpuStr.endsWith('m')
             ? parseInt(cpuStr) * 1e6
-            : parseInt(cpuStr) * 1e9; // bare cores, rare
-        // memory usage is a string like "41008Ki"
-        const memStr = container.usage.memory;
+            : parseInt(cpuStr) * 1e9;
+        const memStr = c.usage.memory;
         const memKi = memStr.endsWith('Ki') ? parseInt(memStr) : parseInt(memStr) / 1024;
 
         totalCpuNano += cpuNano || 0;
@@ -225,13 +167,13 @@ async function getPodMetrics() {
     const avgCpuMillicores = Math.round(totalCpuNano / result.items.length / 1e6);
     const avgMemoryMi = Math.round(totalMemoryKi / result.items.length / 1024);
 
-    console.log('Metrics:', avgCpuMillicores, avgMemoryMi);
     return { cpu: avgCpuMillicores + 'm', memory: avgMemoryMi + 'Mi' };
   } catch (e) {
     console.error('Error fetching metrics:', e.message);
     return { cpu: 'N/A', memory: 'N/A' };
   }
 }
+
 // --- Routes ---
 
 app.get('/health', (req, res) => {
@@ -251,25 +193,22 @@ app.get('/metrics', async (req, res) => {
   res.end(await register.metrics());
 });
 
-const path = require('path');
-
 app.get('/scaling', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'scaling.html'));
 });
 
 app.get('/api/scaling', async (req, res) => {
   const podCount = await getPodCount();
-  const metrics = await getPodMetrics(); // { cpu: '7m', memory: '54Mi' }
+  const metrics = await getPodMetrics();
 
   const cpuMillicores = parseInt(metrics.cpu) || 0;
   const memMi = parseInt(metrics.memory) || 0;
 
-  const CPU_LIMIT_M = 200;      // from your Deployment's resources.limits.cpu
-  const MEM_LIMIT_MI = 128;     // from your Deployment's resources.limits.memory
-  const HPA_TARGET_PCT = 0.80;  // your HPA's target CPU utilization
+  const CPU_REQUEST_M = 150;
+  const MEM_LIMIT_MI = 128;
+  const HPA_TARGET_PCT = 0.70;
 
-  // Progress toward the HPA's scale-up trigger, not just raw usage vs limit
-  const cpuUtilPct = cpuMillicores / CPU_LIMIT_M;           // e.g. 7/200 = 0.035
+  const cpuUtilPct = cpuMillicores / CPU_REQUEST_M;
   const cpuProgressPct = Math.min(100, Math.round((cpuUtilPct / HPA_TARGET_PCT) * 100));
 
   res.json({
@@ -282,9 +221,10 @@ app.get('/api/scaling', async (req, res) => {
   });
 });
 
-// --- Load test (add this block) ---
+// --- Load test ---
 
 let loadTestActive = false;
+let activeWorker = null;
 
 app.post('/api/load-test', (req, res) => {
   if (loadTestActive) {
@@ -293,7 +233,7 @@ app.post('/api/load-test', (req, res) => {
   loadTestActive = true;
 
   const durationMs = 30000;
-  const worker = new Worker(`
+  activeWorker = new Worker(`
     const { parentPort, workerData } = require('worker_threads');
     const end = Date.now() + workerData.durationMs;
     while (Date.now() < end) {
@@ -302,10 +242,30 @@ app.post('/api/load-test', (req, res) => {
     parentPort.postMessage('done');
   `, { eval: true, workerData: { durationMs } });
 
-  worker.on('message', () => { loadTestActive = false; });
-  worker.on('error', () => { loadTestActive = false; });
+  activeWorker.on('message', () => {
+    loadTestActive = false;
+    activeWorker = null;
+  });
+  activeWorker.on('error', () => {
+    loadTestActive = false;
+    activeWorker = null;
+  });
+  activeWorker.on('exit', () => {
+    loadTestActive = false;
+    activeWorker = null;
+  });
 
   res.json({ status: 'started', durationMs });
+});
+
+app.post('/api/load-test/stop', async (req, res) => {
+  if (!loadTestActive || !activeWorker) {
+    return res.status(409).json({ error: 'No load test running' });
+  }
+  await activeWorker.terminate();
+  loadTestActive = false;
+  activeWorker = null;
+  res.json({ status: 'stopped' });
 });
 
 app.get('/api/load-test/status', (req, res) => {

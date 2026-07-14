@@ -51,7 +51,6 @@
     box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
   }
 
-  /* --- Header --- */
   .header {
     display: flex;
     align-items: center;
@@ -92,7 +91,6 @@
     color: var(--text-muted);
   }
 
-  /* --- Body --- */
   .body { padding: 28px; }
 
   .eyebrow {
@@ -112,7 +110,6 @@
     letter-spacing: -0.01em;
   }
 
-  /* --- Replica rack (signature element) --- */
   .rack-section { margin-bottom: 30px; }
 
   .rack-labels {
@@ -174,7 +171,6 @@
     color: var(--text-faint);
   }
 
-  /* --- Metric gauges --- */
   .gauges {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -231,7 +227,6 @@
   .fill.cpu { background: var(--accent-signal); }
   .fill.mem { background: var(--accent-warn); }
 
-  /* --- Footer --- */
   .footer {
     border-top: 1px solid var(--hairline);
     padding: 16px 28px;
@@ -257,29 +252,51 @@
     color: var(--accent-good);
   }
 
+  .btn-group {
+    display: flex;
+    gap: 8px;
+  }
+
+  .load-btn {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--accent-warn);
+    color: var(--bg-void);
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .load-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .stop-btn {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--hairline);
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .stop-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .stop-btn:not(:disabled):hover { border-color: var(--accent-warn); color: var(--accent-warn); }
+
   @media (max-width: 420px) {
     .gauges { grid-template-columns: 1fr; }
     .body { padding: 22px; }
     .header { padding: 16px 22px; }
+    .footer { flex-direction: column; align-items: stretch; }
+    .btn-group { justify-content: stretch; }
+    .btn-group button { flex: 1; }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .status-dot { animation: none; }
     .fill, .slot { transition: none; }
   }
-
-.load-btn {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  background: var(--accent-warn);
-  color: var(--bg-void);
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-}
-.load-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -297,7 +314,7 @@
     <div class="rack-section">
       <div class="rack-labels">
         <span class="rack-title">Running replicas</span>
-        <span class="rack-count"><span id="rack-current">4</span><span class="of">&nbsp;/&nbsp;10 max</span></span>
+        <span class="rack-count"><span id="rack-current">2</span><span class="of">&nbsp;/&nbsp;10 max</span></span>
       </div>
       <div class="rack" id="rack"></div>
       <div class="rack-scale">
@@ -311,11 +328,11 @@
         <div class="gauge-top">
           <div>
             <div class="gauge-label">CPU</div>
-            <div class="gauge-sub">target 80%</div>
+            <div class="gauge-sub">progress to 70% target</div>
           </div>
-          <div class="gauge-value" id="cpu-value">34%</div>
+          <div class="gauge-value" id="cpu-value">0%</div>
         </div>
-        <div class="track"><div class="fill cpu" id="cpu-fill" style="width: 34%"></div></div>
+        <div class="track"><div class="fill cpu" id="cpu-fill" style="width: 0%"></div></div>
       </div>
 
       <div class="gauge">
@@ -324,23 +341,24 @@
             <div class="gauge-label">Memory</div>
             <div class="gauge-sub">limit 128Mi</div>
           </div>
-          <div class="gauge-value" id="mem-value">58Mi</div>
+          <div class="gauge-value" id="mem-value">0Mi</div>
         </div>
-        <div class="track"><div class="fill mem" id="mem-fill" style="width: 45%"></div></div>
+        <div class="track"><div class="fill mem" id="mem-fill" style="width: 0%"></div></div>
       </div>
     </div>
   </div>
 
   <div class="footer">
-    <span class="footer-label">Full status</span>
     <span class="cmd">kubectl get hpa test-workload-hpa</span>
-    <button id="load-test-btn" class="load-btn">Run load test</button>
+    <div class="btn-group">
+      <button id="load-test-btn" class="load-btn">Run load test</button>
+      <button id="stop-test-btn" class="stop-btn" disabled>Stop test</button>
+    </div>
   </div>
 </div>
 
 <script>
   const POLL_MS = 4000;
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function renderRack(current, min, max) {
     const rack = document.getElementById('rack');
@@ -360,10 +378,8 @@
     document.getElementById('cpu-value').textContent = data.cpu.pct + '%';
     document.getElementById('mem-value').textContent = data.memory.value;
 
-    const cpuFill = document.getElementById('cpu-fill');
-    const memFill = document.getElementById('mem-fill');
-    cpuFill.style.width = data.cpu.pct + '%';
-    memFill.style.width = data.memory.pct + '%';
+    document.getElementById('cpu-fill').style.width = data.cpu.pct + '%';
+    document.getElementById('mem-fill').style.width = data.memory.pct + '%';
   }
 
   async function poll() {
@@ -377,20 +393,46 @@
     }
   }
 
-  poll();
-  // Reduced-motion users still get updated data, just without the transition animation
-  // (the CSS already disables .fill/.slot transitions under prefers-reduced-motion).
-setInterval(poll, POLL_MS);
+  async function pollLoadTestStatus() {
+    try {
+      const res = await fetch('/api/load-test/status');
+      const data = await res.json();
+      const runBtn = document.getElementById('load-test-btn');
+      const stopBtn = document.getElementById('stop-test-btn');
+      runBtn.disabled = data.active;
+      runBtn.textContent = data.active ? 'Running...' : 'Run load test';
+      stopBtn.disabled = !data.active;
+    } catch (e) {
+      console.error('load-test status poll failed', e);
+    }
+  }
 
-document.getElementById('load-test-btn').addEventListener('click', async (e) => {
-  e.target.disabled = true;
-  e.target.textContent = 'Running...';
-  await fetch('/api/load-test', { method: 'POST' });
-  setTimeout(() => {
-    e.target.disabled = false;
-    e.target.textContent = 'Run load test';
-  }, 30000);
-});
+  poll();
+  pollLoadTestStatus();
+  setInterval(poll, POLL_MS);
+  setInterval(pollLoadTestStatus, 2000);
+
+  document.getElementById('load-test-btn').addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    e.target.textContent = 'Running...';
+    document.getElementById('stop-test-btn').disabled = false;
+    try {
+      await fetch('/api/load-test', { method: 'POST' });
+    } catch (err) {
+      console.error('failed to start load test', err);
+    }
+  });
+
+  document.getElementById('stop-test-btn').addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    try {
+      await fetch('/api/load-test/stop', { method: 'POST' });
+    } catch (err) {
+      console.error('failed to stop load test', err);
+    }
+    document.getElementById('load-test-btn').disabled = false;
+    document.getElementById('load-test-btn').textContent = 'Run load test';
+  });
 </script>
 
 </body>
