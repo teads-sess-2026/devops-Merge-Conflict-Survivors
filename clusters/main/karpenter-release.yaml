@@ -9,6 +9,10 @@ spec:
     spec:
       chart: oci://public.ecr.aws/karpenter/karpenter
       version: "0.32.0"
+      sourceRef:
+        kind: HelmRepository
+        name: karpenter
+        namespace: karpenter
   install:
     crds: Create
   upgrade:
