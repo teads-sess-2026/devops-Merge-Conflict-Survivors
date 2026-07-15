@@ -9,7 +9,10 @@ resource "aws_subnet" "private_a" {
   cidr_block        = "10.0.10.0/24"
   availability_zone = "eu-west-1a"
 
-  tags = { Name = "private-a-Merge" }
+  tags = {
+    Name                                    = "private-a-Merge"
+    "karpenter.sh/discovery"                = "eks-merge-conflict-survivors"
+  }
 }
 
 resource "aws_subnet" "private_b" {
@@ -17,7 +20,10 @@ resource "aws_subnet" "private_b" {
   cidr_block        = "10.0.11.0/24"
   availability_zone = "eu-west-1b"
 
-  tags = { Name = "private-b-Merge" }
+  tags = {
+    Name                                    = "private-b-Merge"
+    "karpenter.sh/discovery"                = "eks-merge-conflict-survivors"
+  }
 }
 
 resource "aws_subnet" "public_a" {

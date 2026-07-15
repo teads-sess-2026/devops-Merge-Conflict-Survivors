@@ -71,7 +71,10 @@ resource "aws_security_group" "eks_cluster" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = { Name = "eks-cluster-merge-conflict-survivors" }
+  tags = {
+    Name                                    = "eks-cluster-merge-conflict-survivors"
+    "karpenter.sh/discovery"                = "eks-merge-conflict-survivors"
+  }
 }
 
 resource "aws_eks_cluster" "main" {

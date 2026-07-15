@@ -6,5 +6,8 @@ resources:
   - hpa.yaml
   - service.yaml
   - image-automation.yaml
+  - karpenter-helmrepo.yaml
+  - karpenter-release.yaml
+  - karpenter-provisioner.yaml
   - monitoring/
   - traefik/
