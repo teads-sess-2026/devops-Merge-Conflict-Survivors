@@ -17,3 +17,13 @@ output "eks_cluster_name" {
 output "eks_cluster_endpoint" {
   value = aws_eks_cluster.main.endpoint
 }
+
+output "route53_nameservers" {
+  description = "Route 53 nameservers for kosmiha.eu - update your domain registrar with these"
+  value       = aws_route53_zone.kosmiha.name_servers
+}
+
+output "route53_zone_id" {
+  description = "Route 53 hosted zone ID for kosmiha.eu"
+  value       = aws_route53_zone.kosmiha.zone_id
+}
