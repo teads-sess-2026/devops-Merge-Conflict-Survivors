@@ -7,5 +7,5 @@ variable "github_token" {
 variable "github_repo_url" {
   description = "GitHub repository URL for Flux to sync"
   type        = string
-  default     = "https://github.com/Miko-4343/FRI-Teads-summer-school-2026"
+  default     = "https://github.com/teads-sess-2026/teads-summer-school-2026"
 }

@@ -71,7 +71,7 @@ resource "kubernetes_manifest" "flux_kustomization" {
     }
     spec = {
       interval = "10m"
-      path     = "./k8s"
+      path     = "./clusters/main"
       prune    = true
       sourceRef = {
         kind = "GitRepository"
