@@ -8,4 +8,3 @@
     - image-automation.yaml
     - monitoring/
     - traefik/
-  EOF
