@@ -131,7 +131,7 @@ function queryK8sAPI(apiPath) {
 
 async function getPodCount() {
   try {
-    const result = await queryK8sAPI('/api/v1/namespaces/default/pods?labelSelector=app=test-workload');
+    const result = await queryK8sAPI('/api/v1/namespaces/default/pods?labelSelector=app=website');
     return result && result.items ? result.items.length : 0;
   } catch (e) {
     console.error('Error fetching pod count:', e.message);
@@ -141,7 +141,7 @@ async function getPodCount() {
 
 async function getPodMetrics() {
   try {
-    const result = await queryK8sAPI('/apis/metrics.k8s.io/v1beta1/namespaces/default/pods?labelSelector=app=test-workload');
+    const result = await queryK8sAPI('/apis/metrics.k8s.io/v1beta1/namespaces/default/pods?labelSelector=app=website');
     if (!result || !result.items || result.items.length === 0) {
       return { cpu: 'N/A', memory: 'N/A' };
     }
