@@ -15,6 +15,7 @@ spec:
       interval: 1h
   timeout: 3m
   values:
+    deploymentMode: SingleBinary
     loki:
       auth_enabled: false
       commonConfig:
@@ -39,6 +40,12 @@ spec:
         limits:
           cpu: 200m
           memory: 512Mi
+    read:
+      replicas: 0
+    write:
+      replicas: 0
+    backend:
+      replicas: 0
     test:
       enabled: false
     lokiCanary:

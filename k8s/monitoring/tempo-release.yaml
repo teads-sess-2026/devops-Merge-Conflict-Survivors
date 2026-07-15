@@ -23,32 +23,13 @@ spec:
         limits:
           cpu: 200m
           memory: 512Mi
-    tempoQuery:
-      enabled: false
-    service:
-      type: ClusterIP
-    persistence:
-      enabled: false
-    config: |
-      multitenancy_enabled: false
-      usage_report:
-        reporting_enabled: false
-      compactor:
-        compaction:
-          block_retention: 48h
-      distributor:
-        receivers:
-          otlp:
-            protocols:
-              http:
-                endpoint: 0.0.0.0:4318
-              grpc:
-                endpoint: 0.0.0.0:4317
-      ingester:
-        trace_idle_period: 10s
-        max_block_duration: 5m
-      querier: {}
-      query_frontend: {}
+      receivers:
+        otlp:
+          protocols:
+            http:
+              endpoint: 0.0.0.0:4318
+            grpc:
+              endpoint: 0.0.0.0:4317
       storage:
         trace:
           backend: local
@@ -56,5 +37,9 @@ spec:
             path: /var/tempo/traces
           wal:
             path: /var/tempo/wal
-      server:
-        http_listen_port: 3100
+    tempoQuery:
+      enabled: false
+    service:
+      type: ClusterIP
+    persistence:
+      enabled: false
