@@ -31,11 +31,11 @@ spec:
               value: http://tempo.monitoring.svc.cluster.local:4318
           resources:
             requests:
-              cpu: 150m
-              memory: 150Mi # was 64Mi
+              cpu: 50m
+              memory: 100Mi
             limits:
-              cpu: 200m
-              memory: 256Mi
+              cpu: 150m
+              memory: 200Mi
           livenessProbe:
             httpGet:
               path: /health
