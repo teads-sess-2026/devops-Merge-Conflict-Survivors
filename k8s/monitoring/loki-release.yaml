@@ -40,6 +40,8 @@ spec:
         limits:
           cpu: 200m
           memory: 512Mi
+      persistence:
+        enabled: false
     read:
       replicas: 0
     write:
