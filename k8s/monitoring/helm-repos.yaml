@@ -15,3 +15,12 @@ metadata:
 spec:
   interval: 1h
   url: https://grafana.github.io/helm-charts
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: cowboysysop
+  namespace: monitoring
+spec:
+  interval: 1h
+  url: https://cowboysysop.github.io/charts
