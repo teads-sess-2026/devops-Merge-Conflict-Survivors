@@ -55,6 +55,8 @@ spec:
           path: /var/tempo/generator/wal
           remote_write:
             - url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
+        traces_storage:
+          path: /var/tempo/generator/traces
         processor:
           service_graphs:
             wait: 10s
