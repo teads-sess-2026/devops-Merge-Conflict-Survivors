@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-workload
+  name: website
   namespace: default
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: test-workload
+      app: website
   template:
     metadata:
       labels:
-        app: test-workload
+        app: website
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "3000"
@@ -26,7 +26,7 @@ spec:
               containerPort: 3000
           env:
             - name: OTEL_SERVICE_NAME
-              value: k8s-test-workload
+              value: k8s-website
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: http://tempo.monitoring.svc.cluster.local:4318
           resources:

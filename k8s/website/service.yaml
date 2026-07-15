@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: test-workload
+  name: website
   namespace: default
   labels:
-    app: test-workload
+    app: website
 spec:
   type: LoadBalancer
   selector:
-    app: test-workload
+    app: website
   ports:
   - protocol: TCP
     port: 80

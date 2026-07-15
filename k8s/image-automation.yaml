@@ -46,5 +46,5 @@ spec:
     push:
       branch: main
   update:
-    path: ./k8s/deployment.yaml
+    path: ./k8s/website/deployment.yaml
     strategy: Setters
