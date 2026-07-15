@@ -6,3 +6,4 @@ resources:
   - image-automation.yaml
   - monitoring/
   - traefik/
+  - certs/
