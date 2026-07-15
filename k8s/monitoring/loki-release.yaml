@@ -48,9 +48,13 @@ spec:
           cpu: 200m
           memory: 512Mi
       persistence:
-        enabled: true
-        storageClass: gp2
-        size: 10Gi
+        enabled: false
+      extraVolumes:
+        - name: loki-data
+          emptyDir: {}
+      extraVolumeMounts:
+        - name: loki-data
+          mountPath: /var/loki
     read:
       replicas: 0
     write:
