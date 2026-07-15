@@ -32,10 +32,8 @@ spec:
 
     ports:
       web:
-        redirections:
-          entryPoint:
-            to: websecure
-            scheme: https
+        expose:
+          default: true
       websecure:
         tls:
           enabled: true

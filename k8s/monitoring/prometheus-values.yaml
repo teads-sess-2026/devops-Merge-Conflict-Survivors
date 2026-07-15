@@ -43,7 +43,7 @@ grafana:
       cpu: 200m
       memory: 256Mi
   service:
-    type: LoadBalancer
+    type: ClusterIP
   grafana.ini:
     auth.anonymous:
       enabled: false

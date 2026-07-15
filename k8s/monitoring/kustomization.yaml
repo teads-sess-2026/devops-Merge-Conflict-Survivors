@@ -8,3 +8,4 @@ resources:
   - loki-release.yaml
   - tempo-release.yaml
   - promtail-release.yaml
+  - grafana-ingress.yaml
