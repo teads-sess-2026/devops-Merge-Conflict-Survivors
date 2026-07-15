@@ -9,4 +9,3 @@ resources:
   - tempo-release.yaml
   - promtail-release.yaml
   - grafana-ingress.yaml
-  - vpa-release.yaml
