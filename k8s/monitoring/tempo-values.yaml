@@ -46,6 +46,9 @@ config: |
       service_graphs:
         wait: 10s
       span_metrics: {}
+      local_blocks:
+        max_live_traces: 50000
+        flush_to_storage: true
   querier: {}
   query_frontend: {}
   storage:
@@ -63,3 +66,4 @@ config: |
         processors:
           - service-graphs
           - span-metrics
+          - local-blocks
