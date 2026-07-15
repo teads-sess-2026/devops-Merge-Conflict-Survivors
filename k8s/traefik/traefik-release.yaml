@@ -1,0 +1,45 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: traefik
+  namespace: traefik
+spec:
+  interval: 10m
+  chart:
+    spec:
+      chart: traefik
+      version: "32.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: traefik
+        namespace: traefik
+      interval: 1h
+  values:
+    service:
+      type: LoadBalancer
+      annotations:
+        service.beta.kubernetes.io/aws-load-balancer-type: nlb
+
+    ingressClass:
+      enabled: true
+      isDefaultClass: true
+
+    providers:
+      kubernetesCRD:
+        enabled: true
+      kubernetesIngress:
+        enabled: true
+
+    ports:
+      web:
+        redirections:
+          entryPoint:
+            to: websecure
+            scheme: https
+      websecure:
+        tls:
+          enabled: true
+
+    metrics:
+      prometheus:
+        enabled: true
