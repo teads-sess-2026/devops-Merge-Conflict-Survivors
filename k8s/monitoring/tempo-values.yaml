@@ -34,6 +34,18 @@ config: |
   ingester:
     trace_idle_period: 10s
     max_block_duration: 5m
+  metrics_generator:
+    registry:
+      external_labels:
+        source: tempo
+    storage:
+      path: /var/tempo/generator/wal
+      remote_write:
+        - url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
+    processor:
+      service_graphs:
+        wait: 10s
+      span_metrics: {}
   querier: {}
   query_frontend: {}
   storage:
@@ -44,4 +56,10 @@ config: |
       wal:
         path: /var/tempo/wal
   server:
-    http_listen_port: 3100
+    http_listen_port: 3200
+  overrides:
+    defaults:
+      metrics_generator:
+        processors:
+          - service-graphs
+          - span-metrics

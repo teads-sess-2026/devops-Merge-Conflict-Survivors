@@ -17,6 +17,7 @@ spec:
   values:
     prometheus:
       prometheusSpec:
+        enableRemoteWriteReceiver: true
         retention: 15d
         resources:
           requests:

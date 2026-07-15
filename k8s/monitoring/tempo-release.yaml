@@ -23,13 +23,44 @@ spec:
         limits:
           cpu: 200m
           memory: 512Mi
-      receivers:
-        otlp:
-          protocols:
-            http:
-              endpoint: 0.0.0.0:4318
-            grpc:
-              endpoint: 0.0.0.0:4317
+    tempoQuery:
+      enabled: false
+    service:
+      type: ClusterIP
+    persistence:
+      enabled: false
+    config: |
+      multitenancy_enabled: false
+      usage_report:
+        reporting_enabled: false
+      compactor:
+        compaction:
+          block_retention: 48h
+      distributor:
+        receivers:
+          otlp:
+            protocols:
+              http:
+                endpoint: 0.0.0.0:4318
+              grpc:
+                endpoint: 0.0.0.0:4317
+      ingester:
+        trace_idle_period: 10s
+        max_block_duration: 5m
+      metrics_generator:
+        registry:
+          external_labels:
+            source: tempo
+        storage:
+          path: /var/tempo/generator/wal
+          remote_write:
+            - url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
+        processor:
+          service_graphs:
+            wait: 10s
+          span_metrics: {}
+      querier: {}
+      query_frontend: {}
       storage:
         trace:
           backend: local
@@ -37,9 +68,11 @@ spec:
             path: /var/tempo/traces
           wal:
             path: /var/tempo/wal
-    tempoQuery:
-      enabled: false
-    service:
-      type: ClusterIP
-    persistence:
-      enabled: false
+      server:
+        http_listen_port: 3200
+      overrides:
+        defaults:
+          metrics_generator:
+            processors:
+              - service-graphs
+              - span-metrics
